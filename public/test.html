@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.5;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .controls {
+      margin: 20px 0;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 5px;
+    }
+    button {
+      padding: 8px 15px;
+      margin-right: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    button.disconnect {
+      background-color: #f44336;
+    }
+    button.refresh {
+      background-color: #2196F3;
+    }
+    .log-container {
+      margin-top: 20px;
+      height: 300px;
+      overflow-y: auto;
+      background-color: #f9f9f9;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+    }
+    .log-entry pre {
+      margin: 5px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .status.connected {
+      background-color: #dff0d8;
+      color: #3c763d;
+    }
+    .status.disconnected {
+      background-color: #f2dede;
+      color: #a94442;
+    }
+    .status.connecting {
+      background-color: #fcf8e3;
+      color: #8a6d3b;
+    }
+    .component-viewer {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 5px;
+    }
+    .component-content {
+      max-height: 400px;
+      overflow-y: auto;
+      background-color: white;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    #settings {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebSocket Test Page</h1>
+  
+  <div id="settings">
+    <div>
+      <label for="serverUrl">Server URL:</label>
+      <input type="text" id="serverUrl" value="localhost:3002" placeholder="e.g., localhost:3002">
+    </div>
+    <div>
+      <label for="authToken">Auth Token:</label>
+      <input type="text" id="authToken" value="test-token-12345" placeholder="Authentication token">
+    </div>
+  </div>
+  
+  <div class="status disconnected" id="connectionStatus">Disconnected</div>
+  
+  <div class="controls">
+    <button id="connectBtn">Connect</button>
+    <button id="disconnectBtn" class="disconnect" disabled>Disconnect</button>
+    <button id="getComponentsBtn" class="refresh" disabled>Get Components</button>
+    <button id="sendAuthBtn" disabled>Authenticate</button>
+    <button id="clearLogBtn">Clear Log</button>
+  </div>
+  
+  <h2>WebSocket Log</h2>
+  <div class="log-container" id="logContainer"></div>
+  
+  <h2>Memory Bank Components</h2>
+  <div class="component-viewer">
+    <div class="component-content" id="componentsOutput">
+      <p>Connect and click "Get Components" to view data</p>
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const getComponentsBtn = document.getElementById('getComponentsBtn');
+    const sendAuthBtn = document.getElementById('sendAuthBtn');
+    const clearLogBtn = document.getElementById('clearLogBtn');
+    const serverUrlInput = document.getElementById('serverUrl');
+    const authTokenInput = document.getElementById('authToken');
+    const logContainer = document.getElementById('logContainer');
+    const componentsOutput = document.getElementById('componentsOutput');
+    const connectionStatus = document.getElementById('connectionStatus');
+    
+    // State
+    let socket = null;
+    let connected = false;
+    let authenticated = false;
+    let serverVersionInfo = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 3;
+    
+    // Function to format a timestamp
+    function formatTime() {
+      const now = new Date();
+      return now.toLocaleTimeString() + '.' + now.getMilliseconds().toString().padStart(3, '0');
+    }
+    
+    // Function to add a message to the log
+    function addMessage(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      
+      const timestamp = document.createElement('span');
+      timestamp.textContent = '[' + formatTime() + '] ';
+      timestamp.style.color = '#666';
+      entry.appendChild(timestamp);
+      
+      if (typeof message === 'object') {
+        const pre = document.createElement('pre');
+        pre.textContent = JSON.stringify(message, null, 2);
+        entry.appendChild(pre);
+      } else {
+        entry.appendChild(document.createTextNode(message));
+      }
+      
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    
+    // Update connection status display
+    function updateConnectionStatus(status) {
+      connectionStatus.className = 'status ' + status;
+      
+      switch(status) {
+        case 'connected':
+          connectionStatus.textContent = 'Connected' + (serverVersionInfo ? ` (${serverVersionInfo})` : '');
+          break;
+        case 'connecting':
+          connectionStatus.textContent = 'Connecting...';
+          break;
+        case 'disconnected':
+          connectionStatus.textContent = 'Disconnected';
+          break;
+        case 'error':
+          connectionStatus.textContent = 'Connection Error';
+          break;
+        case 'authenticated':
+          connectionStatus.textContent = 'Authenticated' + (serverVersionInfo ? ` (${serverVersionInfo})` : '');
+          break;
+        default:
+          connectionStatus.textContent = status;
+      }
+    }
+    
+    // Connect to the server
+    connectBtn.addEventListener('click', () => {
+      try {
+        updateConnectionStatus('connecting');
+        let serverUrl = serverUrlInput.value.trim();
+        
+        // Ensure URL has ws:// prefix
+        if (!serverUrl.startsWith('ws://') && !serverUrl.startsWith('wss://')) {
+          serverUrl = 'ws://' + serverUrl;
+        }
+        
+        addMessage(`Connecting to ${serverUrl}...`);
+        
+        // Create WebSocket connection
+        socket = new WebSocket(serverUrl);
+        
+        // Connection timeout (5 seconds)
+        const connectionTimeout = setTimeout(() => {
+          if (socket && socket.readyState !== WebSocket.OPEN) {
+            addMessage('Connection timeout. Server not responding.', 'error');
+            updateConnectionStatus('error');
+            socket.close();
+          }
+        }, 5000);
+        
+        // Connection opened
+        socket.addEventListener('open', (event) => {
+          clearTimeout(connectionTimeout);
+          connected = true;
+          reconnectAttempts = 0;
+          updateConnectionStatus('connected');
+          
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          getComponentsBtn.disabled = false;
+          sendAuthBtn.disabled = false;
+          
+          addMessage('Connected to server');
+        });
+        
+        // Listen for messages
+        socket.addEventListener('message', (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            addMessage('Received message:', 'received');
+            addMessage(message);
+            
+            // Handle welcome message
+            if (message.type === 'welcome') {
+              serverVersionInfo = `Server: ${message.server || 'unknown'} v${message.version || 'unknown'}`;
+              updateConnectionStatus('connected');
+              
+              if (message.requiresAuth) {
+                addMessage('Server requires authentication');
+              }
+            }
+            
+            // Handle authentication result
+            if (message.type === 'authenticationResult') {
+              if (message.success) {
+                authenticated = true;
+                updateConnectionStatus('authenticated');
+                addMessage('Authentication successful');
+              } else {
+                addMessage(`Authentication failed: ${message.error || 'Unknown error'}`, 'error');
+              }
+            }
+            
+            // Handle resource message (memory bank)
+            if (message.type === 'resourceData' && message.resourceId === 'memory-bank') {
+              componentsOutput.innerHTML = '<pre>' + JSON.stringify(message.data, null, 2) + '</pre>';
+            }
+            
+            // Handle error messages
+            if (message.type === 'error') {
+              addMessage(`Error: ${message.error.message || message.error}`, 'error');
+            }
+          } catch (error) {
+            addMessage('Error parsing message: ' + error.message, 'error');
+          }
+        });
+        
+        // Connection closed
+        socket.addEventListener('close', (event) => {
+          clearTimeout(connectionTimeout);
+          connected = false;
+          authenticated = false;
+          
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          getComponentsBtn.disabled = true;
+          sendAuthBtn.disabled = true;
+          
+          updateConnectionStatus('disconnected');
+          
+          const reason = event.reason ? ` (${event.reason})` : '';
+          addMessage(`Disconnected from server: Code ${event.code}${reason}`);
+          
+          // Auto-reconnect logic with exponential backoff
+          if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS && event.code !== 1000) {
+            const delay = Math.pow(2, reconnectAttempts) * 1000;
+            reconnectAttempts++;
+            addMessage(`Attempting to reconnect in ${delay/1000} seconds... (Attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+            
+            setTimeout(() => {
+              if (!connected) {
+                connectBtn.click();
+              }
+            }, delay);
+          }
+        });
+        
+        // Connection error
+        socket.addEventListener('error', (event) => {
+          clearTimeout(connectionTimeout);
+          addMessage('WebSocket error', 'error');
+          updateConnectionStatus('error');
+        });
+      } catch (error) {
+        addMessage('Connection error: ' + error.message, 'error');
+        updateConnectionStatus('error');
+      }
+    });
+    
+    // Disconnect from the server
+    disconnectBtn.addEventListener('click', () => {
+      if (socket) {
+        socket.close(1000, "User initiated disconnect");
+        addMessage('Disconnecting from server...');
+      }
+    });
+    
+    // Get memory bank components
+    getComponentsBtn.addEventListener('click', () => {
+      if (!connected || !socket) {
+        addMessage('Not connected to server', 'error');
+        return;
+      }
+      
+      const message = {
+        type: 'getResource',
+        resourceId: 'memory-bank',
+        requestId: 'req-' + Date.now(),
+        parameters: {}
+      };
+      
+      addMessage('Requesting memory bank components');
+      socket.send(JSON.stringify(message));
+    });
+    
+    // Send authentication
+    sendAuthBtn.addEventListener('click', () => {
+      if (!connected || !socket) {
+        addMessage('Not connected to server', 'error');
+        return;
+      }
+      
+      const token = authTokenInput.value.trim();
+      if (!token) {
+        addMessage('Please enter an authentication token', 'error');
+        return;
+      }
+      
+      const message = {
+        type: 'authenticate',
+        token: token,
+        requestId: 'auth-' + Date.now()
+      };
+      
+      addMessage('Sending authentication request');
+      socket.send(JSON.stringify(message));
+    });
+    
+    // Clear log
+    clearLogBtn.addEventListener('click', () => {
+      logContainer.innerHTML = '';
+      addMessage('Log cleared');
+    });
+    
+    // Initial message
+    addMessage('WebSocket test page loaded');
+  </script>
+</body>
+</html> 

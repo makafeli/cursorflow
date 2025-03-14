@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  cursorflow-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cursorflow-mcp:latest
+    container_name: cursorflow-mcp
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - AUTH_TOKEN=${AUTH_TOKEN:-your_secure_token_here}
+      - DATA_DIR=/data
+      - MEMORY_BANK_DIR=/data/memory-bank
+      - WORKFLOWS_DIR=/data/workflows
+      - MODES_DIR=/data/modes
+      - LOG_LEVEL=info
+      - ENABLE_CACHE=true
+      - DATABASE_PATH=/data/memory-bank/memory-bank.db
+      - USE_DATABASE=true
+    volumes:
+      - cursorflow-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - cursorflow-network
+
+volumes:
+  cursorflow-data:
+    name: cursorflow-data
+
+networks:
+  cursorflow-network:
+    name: cursorflow-network 

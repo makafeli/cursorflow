@@ -1,0 +1,28 @@
+{
+  "id": "example-workflow",
+  "name": "Example Workflow",
+  "description": "A simple example workflow to test the CursorFlow MCP server",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "input",
+      "name": "Start",
+      "description": "Starting point of the workflow",
+      "defaultValue": {
+        "message": "Starting workflow execution"
+      }
+    },
+    {
+      "id": "process",
+      "type": "transform",
+      "name": "Process",
+      "description": "Process the input data"
+    },
+    {
+      "id": "finish",
+      "type": "output",
+      "name": "Finish",
+      "description": "End of the workflow"
+    }
+  ]
+} 

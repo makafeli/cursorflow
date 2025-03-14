@@ -1,0 +1,264 @@
+/* 
+ * CursorFlow MCP - Memory Bank Visualizer
+ * Main Stylesheet
+ */
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  transition: all 0.3s;
+}
+
+.sidebar {
+  min-height: calc(100vh - 56px);
+  position: sticky;
+  top: 56px;
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  padding-bottom: 1rem;
+}
+
+.sidebar .nav-link {
+  font-weight: 500;
+  color: #333;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+  color: #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+  border-left: 3px solid #007bff;
+}
+
+.sidebar-heading {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+main {
+  min-height: calc(100vh - 56px);
+}
+
+.component-editor {
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.activity-feed {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.activity-item {
+  border-left: 3px solid transparent;
+  margin-bottom: 0.5rem;
+  transition: all 0.2s;
+}
+
+.activity-timestamp {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.toast {
+  z-index: 1090;
+}
+
+/* Connection status indicator */
+.connection-status {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.connected {
+  background-color: #28a745;
+}
+
+.disconnected {
+  background-color: #dc3545;
+}
+
+.connecting {
+  background-color: #ffc107;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark mode styles */
+.dark-mode {
+  background-color: #121212;
+  color: #eee;
+}
+
+.dark-mode .card {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+.dark-mode .card-header {
+  background-color: #252525;
+  border-color: #333;
+}
+
+.dark-mode .sidebar {
+  background-color: #1a1a1a;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .sidebar .nav-link {
+  color: #ddd;
+}
+
+.dark-mode .sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .sidebar .nav-link.active {
+  color: #8ab4f8;
+  background-color: rgba(138, 180, 248, 0.1);
+  border-left: 3px solid #8ab4f8;
+}
+
+.dark-mode .activity-timestamp {
+  color: #adb5bd;
+}
+
+.dark-mode .list-group-item {
+  background-color: #1e1e1e;
+  border-color: #333;
+  color: #eee;
+}
+
+.dark-mode .list-group-item:hover {
+  background-color: #252525;
+}
+
+.dark-mode .list-group-item.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.dark-mode .text-muted {
+  color: #adb5bd !important;
+}
+
+.dark-mode .btn-outline-secondary {
+  color: #adb5bd;
+  border-color: #adb5bd;
+}
+
+.dark-mode .btn-outline-secondary:hover {
+  background-color: #adb5bd;
+  color: #121212;
+}
+
+.dark-mode .bg-light {
+  background-color: #1a1a1a !important;
+}
+
+.dark-mode .border-bottom {
+  border-color: #333 !important;
+}
+
+.dark-mode .form-control {
+  background-color: #252525;
+  border-color: #333;
+  color: #eee;
+}
+
+.dark-mode .form-control:focus {
+  background-color: #252525;
+  color: #eee;
+}
+
+.dark-mode .modal-content {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+.dark-mode .modal-header,
+.dark-mode .modal-footer {
+  border-color: #333;
+}
+
+.dark-mode .close {
+  color: #eee;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    position: static;
+    height: auto;
+    min-height: auto;
+    max-height: 300px;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Z-index for overlays */
+.z-1 { z-index: 1; }
+.z-2 { z-index: 2; }
+.z-3 { z-index: 3; } 

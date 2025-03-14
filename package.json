@@ -1,0 +1,52 @@
+{
+  "name": "cursorflow-mcp",
+  "version": "0.1.0",
+  "description": "CursorFlow MCP Server - Persistent Project Context and Streamlined AI-Assisted Development",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "prepare": "mkdir -p data/memory-bank data/workflows data/modes"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/cursorflow-mcp-server.git"
+  },
+  "keywords": [
+    "cursor",
+    "cursorflow",
+    "mcp",
+    "ai",
+    "llm",
+    "context",
+    "memory-bank"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "chart.js": "^4.4.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "fs-extra": "^11.1.1",
+    "moment": "^2.29.4",
+    "node-fetch": "^2.7.0",
+    "simple-git": "^3.20.0",
+    "uuid": "^9.0.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "chai": "^5.2.0",
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "sqlite3": "^5.1.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
